@@ -87,3 +87,9 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# super secret information
+reddit-exporter.cfg
+
+# exports
+export-saved.csv
