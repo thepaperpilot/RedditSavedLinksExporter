@@ -68,7 +68,7 @@ def getCSV(user):
 
 @app.route('/')
 def homepage():
-    url = r.get_authorize_url('reddit-exporter', ['identity', 'read'])
+    url = r.get_authorize_url('reddit-exporter', ['identity', 'read', 'history'])
     link = "<a href=%s>link</a>" % url
     text = "Authenticate. %s</br></br>" % link
     return text
