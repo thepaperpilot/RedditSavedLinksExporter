@@ -49,22 +49,23 @@ def getRedditObject():
     return r
 
 def getCSV(user):
-    # csv setting
     csv_rows = []
 
     csv_rows.append("<tr><th>Post</th><th>Subreddit</th></tr>")
 
-    # filter saved item for link
-    for i in user.get_saved(limit=None, time='all'):
+    # TODO Send up a static webpage with a loading icon but not the content (at first), and use javascript to iterate over this and add the posts to a div as they become ready, and remove the loader at the end
+    for i in user.get_saved(): # (limit=None, time='all'): # This takes a REALLY long time
         if not hasattr(i, 'title'):
            i.title = i.link_title
         try:
             subreddit = str(i.subreddit)
         except AttributeError:
             subreddit = "None"
+        # TODO CSV, MD, and HTML
+        # TODO Make the html mimic the actual reddit site (with carbon css)
         csv_rows.append("<tr><th><a href=" + i.permalink.encode('utf-8') + ">" + i.title.encode('utf-8') + "</a></th><th>" + subreddit + "</th></tr>")
 
-    return '<table style="width=100%">' + "</br>".join(csv_rows) + "<\table>"
+    return '<table style="width=100%">' + "".join(csv_rows) + "<\table>"
 
 @app.route('/')
 def homepage():
@@ -79,9 +80,14 @@ def authorized():
     r.get_access_information(code)
     user = r.get_me()
 
-    text = getCSV(user)
+    content = getCSV(user)
 
-    return text
+    with open('index.html') as html:
+        # TODO Add footer with buttons to download the html, csv, and markdown files
+        print html.read().replace('{{ content }}', content)
+        return html.read().replace('{{ content }}', content)
+
+    return content
 
 if __name__ == "__main__":
     logging.basicConfig()
