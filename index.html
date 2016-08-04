@@ -1,155 +1,231 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title>reddit saved links exporter</title>
 <style>
-nav {
-  text-align: center;
-  padding-top: 24px;
-}
-
-nav ul, footer ul {
-  padding: 0;
-  list-style: none;
-  font-weight: bold;
-  display: inline;
-  text-align: center;
-}
-
-nav ul li, footer ul li {
-  display: table-cell;
-  vertical-align: middle;
-  padding-right: 8px;
-  padding-left: 8px;
-  width: 200px;
-  white-space: nowrap;
-}
-
-footer {
-  font-size: .8em;
-  text-align: center;
-}
-
-pre,
-code {
-  font-family: Menlo, Monaco, "Courier New", monospace;
-}
-
-pre {
-  padding: .5rem;
-  line-height: 1.25;
-  overflow-x: scroll;
-}
-
-a,
-a:visited {
-  color: #01ff70;
-  text-decoration: none;
-}
-
-a:hover,
-a:focus,
-a:active {
-  color: #2ecc40;
-}
-
-html {
-  font-size: 12px;
-}
-
+html,
 body {
-  line-height: 1.85;
+	background:#1a1a1b;
+	color:#dddde1;
+    font-family: "Courier New";
+}
+
+a {
+    color: #dddde1;
+    text-decoration: unset;
+}
+
+a:visited {
+    color: #808c94;
 }
 
 p {
-  font-size: 1rem;
-  margin-bottom: 1.3rem;
-}
-
-h1,
-h2,
-h3,
-h4 {
-  margin: 1.414rem 0 .5rem;
-  font-weight: inherit;
-  line-height: 1.42;
-}
-
-h1 {
-  margin-top: 0;
-  font-size: 3.998rem;
-}
-
-h2 {
-  font-size: 2.827rem;
-}
-
-h3 {
-  font-size: 1.999rem;
-}
-
-h4 {
-  font-size: 1.414rem;
-}
-
-h5 {
-  font-size: 1.121rem;
-}
-
-h6 {
-  font-size: .88rem;
-}
-
-small {
-  font-size: .707em;
-}
-
-canvas,
-iframe,
-video,
-svg,
-select,
-textarea {
-  max-width: 100%;
-}
-
-img {
-	max-width: 30%;
-}
-
-html,
-body {
-  background-color: #222;
-  min-height: 100%;
-}
-
-html {
-  font-size: 18px;
+    font-size: small;
 }
 
 .container {
-  max-width: 48rem;
-  margin: 6rem auto 1rem;
-  padding: .25rem;
+    width: 80%;
+    display: table;
+    margin: 0 auto;
+    padding-top: 20px;
 }
 
-body {
-  color: #fafafa;
-  font-family: "Courier New";
-  line-height: 1.45;
+.thumbnail {
+    float: left;
+    overflow: hidden;
+    margin: 0 9px 0 0;
+    position: relative;
+    width: 70px;
+    max-height: 60px;
 }
 
-pre {
-  background-color: #333;
+.pic {
+    max-width: 70px;
+    display: block;
+    margin: auto;
+    padding-top: 10px;
 }
 
-blockquote {
-  border-left: 3px solid #01ff70;
-  padding-left: 1rem;
+.reddit {
+    color: #3498db;
 }
 
-hr {
-  border:0;
-  border-top: dashed 2px;
+.reddit:visited {
+    color: #3498db;
+}
+
+.link {
+    padding: 0 10px;
+    background: #202024;
+    border: 1px solid #28282d;
+    border-bottom-color: #161618;
+}
+
+.title {
+    font-size: medium;
+    margin-bottom: 4px;
+}
+
+.body {
+    font-size: small;
+}
+
+.tagline {
+    font-size: smaller;
+    color: #637481;
+    margin-top: 0;
+}
+
+.md {
+	color:#dddee1
+}
+.md blockquote,.md blockquote blockquote blockquote {
+	padding:5px;
+	margin-left:0;
+	background:#28282d;
+	border:1px solid #3a3a3e;
+	border-left-width:3px;
+	color:#bbbbbe
+}
+.md blockquote blockquote {
+	background:#26262b
+}
+.titlebox .md>blockquote {
+	margin:1em 0
+}
+.message.gold-auto blockquote {
+	margin-bottom:2px;
+	background:#2b2b2b;
+	border:1px solid #333;
+	color:#bbb
+}
+.md code,.md pre {
+	background:#2b2b30;
+	border-color:#3c3c42;
+	border-radius:0;
+	color:#ccccd1
+}
+.link .usertext .md pre,.link .usertext .md *>code,.usertext.border div.md pre,.usertext.border div.md *>code {
+	background:#2b2b30
+}
+.new-comment div.md pre,.new-comment div.md *>code {
+	background:#28282d
+}
+.usertext.grayed .usertext-body {
+	padding:0;
+	background:transparent
+}
+.usertext.grayed .usertext-body .md,.md del {
+	color:#888891
+}
+.md table {
+	margin:1em 0;
+	font-size:12px
+}
+.titlebox .md table {
+	font-size:11px;
+	width:100%
+}
+.md table th,.md table td {
+	padding:5px 8px;
+	border:1px solid #2d2d33;
+	border:1px solid #303036
+}
+.md table th {
+	background:#29292e
+}
+.md table tbody tr:nth-of-type(odd) {
+	background:#25252a
+}
+.md table tbody tr:nth-of-type(even) {
+	background:#29292e
+}
+.md hr {
+	height:1px;
+	background:#2d2d30;
+	border-bottom:1px solid #1d1d20
+}
+.titlebox .md hr {
+	border-bottom-color:#161618
+}
+textarea,.pretty-form textarea,input[type="text"],input[type="url"],input[type="password"],input[type="number"],.pretty-form input[type="text"],.roundfield textarea,.roundfield input[type="text"],.roundfield input[type="url"],.roundfield input[type="password"],.roundfield input[type="number"],.linefield textarea,.linefield input[type="text"] {
+	background:#27272b;
+	border:1px solid #323238;
+	box-shadow:none;
+	font-family:sans-serif;
+	color:#eeeef1
+}
+.link .usertext-edit textarea {
+	padding:5px 7px
+}
+.comment .usertext-edit textarea {
+	padding:3px 5px
+}
+.stylesheet-customize-container textarea {
+	font-family:"Bitstream Vera Sans Mono",Consolas,monospace
+}
+textarea:hover,textarea:active,textarea:focus,.pretty-form textarea:hover,.pretty-form textarea:active,.pretty-form textarea:focus,input[type="text"]:hover,input[type="text"]:active,input[type="text"]:focus,input[type="url"]:hover,input[type="url"]:active,input[type="url"]:focus,.linefield input[type="text"]:hover {
+	border-color:#46464a;
+	outline:none
+}
+a:active,a:focus,input:active,input:focus textarea:active,textarea:focus .option:active,.option:focus {
+	outline:none
+}
+.usertext-body .md, div.usertext .md {
+	padding:5px 15px;
+	position:relative;
+	background:#202024;
+	border-top:1px solid #28282d;
+	border-bottom:1px solid #161618;
+	font-size:12px;
+	color:#dddde3
+}
+.usertext-body .md:after {
+	content:"";
+	height:1px;
+	display:block;
+	position:absolute;
+	bottom:0;
+	left:0;
+	right:0;
+	background:#28282d
+}
+.usertext-body .md {
+	margin-bottom:-1px
+}
+.md h1,.md h2,.md h3,.md h4,.md h5,.md h6 {
+	margin:.5em 0;
+	font-weight:bold;
+	color:#eeeef1
+}
+.md h1 {
+	font-size:18px
+}
+.md h1 a {
+	color:#3498db
+}
+.md h2 {
+	font-size:17px
+}
+.md h3 {
+	font-size:16px
+}
+.md h4 {
+	font-size:15px
+}
+.md h5 {
+	font-size:14px
+}
+.md h6 {
+	font-size:14px;
+	font-weight:normal
+}
+.md>p {
+	margin:1em 0
+}
+.md ul, .md ol {
+	padding-left:20px;
+	margin:.5em 0
 }
 </style>
 </head>
