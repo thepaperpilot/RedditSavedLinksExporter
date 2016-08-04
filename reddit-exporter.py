@@ -5,11 +5,8 @@ import sys
 import logging
 import json
 import praw
-import webbrowser
 
 app = Flask(__name__)
-
-URI = 'http://127.0.0.1:65010/'
 
 def readSettings():
     try:
@@ -44,7 +41,7 @@ def getRedditObject():
 
     r.set_oauth_app_info(client_id=settings['client_id'],
                          client_secret=settings['client_secret'],
-                         redirect_uri=URI + 'authorize_callback')
+                         redirect_uri=settings['redirect_uri'])
 
     return r
 
@@ -65,7 +62,7 @@ def getCSV(user):
         # TODO Make the html mimic the actual reddit site (with carbon css)
         csv_rows.append("<tr><th><a href=" + i.permalink.encode('utf-8') + ">" + i.title.encode('utf-8') + "</a></th><th>" + subreddit + "</th></tr>")
 
-    return '<table style="width=100%">' + "".join(csv_rows) + "<\table>"
+    return '<table style="width=100%">' + "".join(csv_rows) + "</table>"
 
 @app.route('/')
 def homepage():
@@ -84,10 +81,7 @@ def authorized():
 
     with open('index.html') as html:
         # TODO Add footer with buttons to download the html, csv, and markdown files
-        print html.read().replace('{{ content }}', content)
         return html.read().replace('{{ content }}', content)
-
-    return content
 
 if __name__ == "__main__":
     logging.basicConfig()
@@ -96,7 +90,6 @@ if __name__ == "__main__":
         settings = readSettings()
         r = getRedditObject()
 
-        webbrowser.open(URI)
         app.run(debug=True, port=65010)
     except:
         logging.exception("Uncaught exception")
