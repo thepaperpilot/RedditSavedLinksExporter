@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-from flask import Flask, request
-from pprint import pprint
+from flask import Flask, request, redirect
+from praw.errors import HTTPException, OAuthInvalidGrant
+import pprint
 import sys
 import logging
 import json
@@ -33,6 +34,10 @@ def readSettings():
         logging.critical("Secret not set.")
         sys.exit(1)
 
+    if (len(settings["redirect_uri"]) == 0):
+        logging.critical("Redirect URI not set.")
+        sys.exit(1)
+
     return settings
 
 def getRedditObject():
@@ -47,6 +52,7 @@ def getRedditObject():
     return r
 
 def getCSV(user):
+    json = ''
     csv = ''
     md = ''
     html = '<div style="text-align: center;font-size: large;padding-top: 60px;">\n<a href="https://www.reddit.com/user/' + user.name.encode('utf-8') + '">/u/' + user.name.encode('utf-8') + '</a>\n</div>\n<div class="container">\n'
@@ -56,7 +62,8 @@ def getCSV(user):
         # pprint(vars(i))
         if not hasattr(i, 'title'):
            i.title = i.link_title
-        # TODO CSV, MD, and HTML
+        # TODO JSON, CSV, MD, and HTML
+        # TODO fix subreddit and user links in comment HTML (using /r/ and /u/ shortcuts)
         if (i._underscore_names == None):
             html += '<div class="link">\n<a href="' + i.url.encode('utf-8') + '" class="thumbnail"><img class="pic" src="' + ('https://b.thumbs.redditmedia.com/ueGKKytgsoCNMne-N18pP8-_fBAMELl02YrlMrlYG2Y.png' if (i.thumbnail == None) | (i.thumbnail == 'self') | (i.thumbnail == 'default') | (i.thumbnail == '') else i.thumbnail.encode('utf-8')) + '"/></a>\n'
             html += '<div style="display: inline;">\n<p class="title">\n<a href="' + i.url.encode('utf-8') + '">' + i.title.encode('utf-8') + '</a>\n</p>\n'
@@ -69,29 +76,29 @@ def getCSV(user):
 
     html += '</div>'
 
-    return html #'<table style="width=100%">' + "".join(csv_rows) + "</table>"
+    return html
 
 @app.route('/')
 def homepage():
-    url = r.get_authorize_url('reddit-exporter', ['identity', 'read', 'history'])
-    content = '<a class="button" href=%s>\nAuthenticate\n</a>' % url
-    with open('authenticate.html') as html:
-        return html.read().replace('{{ content }}', content)
+    if (r.is_oauth_session()):
+        content = getCSV(r.get_me())
 
-@app.route('/authorize_callback')
-def authorized():
-    code = request.args.get('code', '')
-    try :
-        r.get_access_information(code)
-    except:
-        return homepage()
-    user = r.get_me()
+        with open('index.html') as html:
+            with open('navbar.html') as navbar:
+                return html.read().replace('{{ content }}', content + navbar.read())
+    else:
+        code = request.args.get('code', '')
+        if (code):
+            try:
+                r.get_access_information(code)
+                return redirect(request.path)
+            except OAuthInvalidGrant:
+                pass
 
-    content = getCSV(user)
-
-    with open('index.html') as html:
-        with open('navbar.html') as navbar:
-            return html.read().replace('{{ content }}', content + navbar.read())
+        url = r.get_authorize_url('reddit-exporter', ['identity', 'history'])
+        content = '<a class="button" href=%s>\nAuthenticate\n</a>' % url
+        with open('authenticate.html') as html:
+            return html.read().replace('{{ content }}', content)
 
 if __name__ == "__main__":
     logging.basicConfig()
