@@ -1,0 +1,18 @@
+html {
+	background:#1a1a1b;
+	color:#dddde1;
+    font-family: "Courier New";
+}
+
+.button {
+    color: #dddde1;
+    text-decoration: unset;
+    display: table;
+    margin: 0 auto;
+    margin-top: 50vh;
+    padding: 20px;
+    background: #202024;
+    border: 1px solid #28282d;
+    border-bottom-color: #161618;
+    font-size: large;
+}

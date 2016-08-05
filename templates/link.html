@@ -1,0 +1,54 @@
+{% if link["self"] == "True" %}
+    <div class="link">
+        <p class="tagline" style="margin-top: 16px;">
+            <a href="{{ link["link_url"] }}">
+                {{ link["link_title"] }}
+            </a> by <a class="reddit" href="https://www.reddit.com/user/{{ link["link_author"] }}">
+                {{ link["link_author"] }}
+            </a> in <a class="reddit" href="https://www.reddit.com/r/{{ link["subreddit"] }}">
+                {{ link["subreddit"] }}
+            </a> with <a class="reddit" href="{{ link["permalink"] }}">
+                {{ link["num_comments"] }} comments
+            </a>
+        </p>
+        <p class="tagline">
+            <a class="reddit" href="https://www.reddit.com/user/{{ link["author"] }}">
+                {{ link["author"] }}
+            </a>
+            <a href="https://www.reddit.com/comments/{{ link["link_id"] }}/{{ link["link_title"] }}/{{ link["id"] }}/">
+                permalink
+            </a>
+        </p>
+        <div class="link" style="margin: 4px;">
+            {% raw link["body"] %}
+        </div>
+    </div>
+{% else %}
+    <div class="link">
+        <a href="{{ link["url"] }}" class="thumbnail">
+            <img class="pic" src="
+                {% if (link["thumbnail"] == None) | (link["thumbnail"] == "self") | (link["thumbnail"] == "default") | (link["thumbnail"] == "") %}
+                    https://b.thumbs.redditmedia.com/ueGKKytgsoCNMne-N18pP8-_fBAMELl02YrlMrlYG2Y.png
+                {% else %}
+                    {{ link["thumbnail"] }}
+                {% end %}
+                "/>
+        </a>
+        <div style="display: inline;">
+            <p class="title">
+                <a href="{{ link["url"] }}">
+                    {{ link["title"] }}
+                </a>
+            </p>
+            <p class="tagline">
+                submitted by <a class="reddit" href="https://www.reddit.com/user/{{ link["author"] }}">
+                    {{ link["author"] }}
+                </a> to <a class="reddit" href="https://www.reddit.com/r/{{ link["subreddit"] }}">
+                    {{ link["subreddit"] }}
+                </a> with <a class="reddit" href="{{ link["permalink"] }}">
+                    {{ link["num_comments"] }} comments
+                </a>
+            </p>
+        </div>
+    </div>
+{% end %}
