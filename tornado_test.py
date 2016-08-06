@@ -22,6 +22,7 @@ class LinkSocketHandler(tornado.websocket.WebSocketHandler):
         return {}
 
     def open(self):
+        # TODO start loading progress bar at top, that turns into the export buttons bar on completion
         self.pull_links(r.get_me())
 
     def update_link(self, link):
@@ -80,6 +81,12 @@ class AuthHandler(BaseHandler):
             except OAuthInvalidGrant:
                 pass
         else:
+            # TODO slider for different levels of archival
+            #   (this would probably only affect the HTML export, not the others)
+            # - minimal: what we currently have
+            # - full archive: use everything we get back from the get_saved JSON
+            # - extreme: also download the comments and link contents, so the user
+            #   basically has a full cached copy of their entire saved links
             url = r.get_authorize_url('reddit-exporter', ['identity', 'history'])
             self.render('authenticate.html', link=url)
 
