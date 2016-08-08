@@ -18,26 +18,26 @@ var updater = {
                 case "link":
                     updater.showMessage(json.content);
                     break;
-                case "init":
-                    $("#name").href = "https://www.reddit.com" + json.name;
-                    $("#name").innerHTML = json.name;
-                    break;
                 case "done":
                     $("#navbar").slideDown();
+                    break;
+                case "export":
+                    saveAs(new Blob([json.content], {type: json.type}), json.name, true);
+                    break;
             }
         };
-        $("#json").onClick = function(event) {
+        $("#json").click(function(event) {
             updater.socket.send("json");
-        };
-        $("#csv").onClick = function(event) {
+        });
+        $("#csv").click(function(event) {
             updater.socket.send("csv");
-        };
-        $("#md").onClick = function(event) {
+        });
+        $("#md").click(function(event) {
             updater.socket.send("md");
-        };
-        $("#html").onClick = function(event) {
+        });
+        $("#html").click(function(event) {
             updater.socket.send("html");
-        };
+        });
     },
 
     showMessage: function(message) {

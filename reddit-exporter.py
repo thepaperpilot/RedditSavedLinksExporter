@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+ #!/usr/bin/env python
+ # coding=utf-8
 
 import json
 import logging
@@ -6,9 +7,9 @@ import os.path
 import praw
 import sys
 import tornado
-from praw.errors import OAuthInvalidGrant
+from praw.errors import OAuthInvalidGrant, OAuthInvalidToken
 from praw.handlers import MultiprocessHandler
-from pprint import pprint
+from pprint import pprint, pformat
 from tornado import gen, web, websocket
 
 class BaseHandler(web.RequestHandler):
@@ -17,6 +18,7 @@ class BaseHandler(web.RequestHandler):
 
 class LinkSocketHandler(websocket.WebSocketHandler):
     links = []
+    json = '['
 
     thread_pool = tornado.concurrent.futures.ThreadPoolExecutor(4)
 
@@ -28,15 +30,42 @@ class LinkSocketHandler(websocket.WebSocketHandler):
     def open(self):
         self.r = get_reddit_object()
         self.r.set_access_credentials(scope, self.get_secure_cookie("token"))
-        message = {
-            "message": "init",
-            "name": "/u/" + self.r.user.name.encode('utf-8'),
-            }
-        self.write_message(message)
+        self.r.config.store_json_result = True
         yield self.thread_pool.submit(self.get_saved, self.r.get_me())
 
     def on_message(self, message):
-        print message
+        if message == "json":
+            send = {
+                "message": "export",
+                "content": self.json,
+                "name": self.r.user.name.encode('utf-8') + ".json",
+                "type": "application/json;charset=utf-8",
+            }
+            self.write_message(send)
+        elif message == "csv":
+            send = {
+                "message": "export",
+                "content": self.generate_csv(),
+                "name": self.r.user.name.encode('utf-8') + ".csv",
+                "type": "text/csv;charset=utf-8",
+            }
+            self.write_message(send)
+        elif message == "md":
+            send = {
+                "message": "export",
+                "content": self.generate_md(),
+                "name": self.r.user.name.encode('utf-8') + ".md",
+                "type": "text/markdown;charset=utf-8",
+            }
+            self.write_message(send)
+        elif message == "html":
+            send = {
+                "message": "export",
+                "content": self.generate_html(),
+                "name": self.r.user.name.encode('utf-8') + ".html",
+                "type": "text/html;charset=utf-8",
+            }
+            self.write_message(send)
 
     def update_link(self, link):
         message = {
@@ -47,21 +76,9 @@ class LinkSocketHandler(websocket.WebSocketHandler):
 
     def get_saved(self, user):
         for i in user.get_saved(limit=None, time='all'):
-            if i._underscore_names is None: # link posts don't have that attribute, whatever it is
-                link = {
-                    "self": "False",
-                    "url": i.url.encode('utf-8'),
-                    "thumbnail": i.thumbnail.encode('utf-8'),
-                    "title": i.title.encode('utf-8'),
-                    "author": "[deleted]" if not i.author else str(i.author.name),
-                    "subreddit": str(i.subreddit.display_name),
-                    "permalink": i.permalink.encode('utf-8'),
-                    "num_comments": str(i.num_comments),
-                }
-                self.links.extend([link])
-                self.update_link(link)
-            else:
-                submission = self.r.get_submission(submission_id=i.link_id.encode('utf-8')[3:])
+            self.json += json.dumps(i.json_dict, indent=4) + ','
+            if isinstance(i, praw.objects.Comment):
+                submission = self.r.get_submission(submission_id=i.link_id.encode('utf-8')[3:]) # much faster than i.submission
                 link = {
                     "self": "True",
                     "link_url": i.link_url.encode('utf-8'),
@@ -77,10 +94,49 @@ class LinkSocketHandler(websocket.WebSocketHandler):
                 }
                 self.links.extend([link])
                 self.update_link(link)
+            else:
+                link = {
+                    "self": "False",
+                    "url": i.url.encode('utf-8'),
+                    "thumbnail": i.thumbnail.encode('utf-8'),
+                    "title": i.title.encode('utf-8'),
+                    "author": "[deleted]" if not i.author else str(i.author.name),
+                    "subreddit": str(i.subreddit.display_name),
+                    "permalink": i.permalink.encode('utf-8'),
+                    "num_comments": str(i.num_comments),
+                }
+                self.links.extend([link])
+                self.update_link(link)
+        self.json = self.json[:-1] + ']'
         message = {
             "message": "done",
             }
         self.write_message(message)
+
+    def generate_csv(self):
+        csv = 'title,url,author,subreddit,comments,permalink\n'
+        for i in self.links:
+            csv += (i["link_title"] if i["self"] == "True" else i["title"]).replace(',', '') + ','
+            csv += (i["link_url"] if i["self"] == "True" else i["url"]).replace(',', '') + ','
+            csv += i["author"].replace(',', '') + ','
+            csv += i["subreddit"].replace(',', '') + ','
+            csv += i["num_comments"].replace(',', '') + ','
+            csv += ("https://www.reddit.com/comments/" + i["link_id"] + "/" + i["link_title"] + "/" + i["id"] + "/" if i["self"] == "True" else i["permalink"]).replace(',', '') + '\n'
+        return csv
+
+    def generate_md(self):
+        for i in self.links:
+            i['permalink'] = i['permalink'].replace(' ', '%20')
+            if i['self'] == "True":
+                i['body_md'] = tornado.escape.xhtml_unescape("> " + i['body'].replace('\n', '\n> '))
+                i['link_url'] = i['link_url'].replace(' ', '%20')
+                i['comment_permalink'] = ("https://www.reddit.com/comments/" + i["link_id"] + "/" + i["link_title"] + "/" + i["id"] + "/").replace(' ', '%20')
+            else:
+                i['url'] = i['url'].replace(' ', '%20')
+        return self.render_string('index.md', name="/u/" + self.r.user.name.encode('utf-8'), links=self.links).replace('﻿', '')
+
+    def generate_html(self):
+        return self.render_string('index.html', name="/u/" + self.r.user.name.encode('utf-8'), links=self.links, js="False")
 
 class MainHandler(BaseHandler):
     @web.authenticated
@@ -96,6 +152,9 @@ class MainHandler(BaseHandler):
             self.render('index.html', name="/u/" + r.user.name.encode('utf-8'), links=[], js="True")
         except OAuthInvalidGrant:
             self.redirect('/auth')
+        except OAuthInvalidToken:
+            self.clear_cookie("token")
+            self.redirect('/')
 
 class AuthHandler(BaseHandler):
     def get(self):
@@ -152,7 +211,7 @@ def get_reddit_object():
 if __name__ == "__main__":
     logging.basicConfig()
 
-    os.system("praw-multiprocess")
+    os.system("praw-multiprocess & disown")
     settings = read_settings()
     handler = MultiprocessHandler()
     scope = ['identity', 'history']
