@@ -15,10 +15,15 @@ var updater = {
         updater.socket.onmessage = function(event) {
             json = JSON.parse(event.data);
             switch (json.message) {
+                case "start":
+                    $("#loadbar").slideUp();
+                    $("#progressbar").slideDown();
+                    break;
                 case "link":
                     updater.showMessage(json.content);
                     break;
                 case "done":
+                    $("#progressbar").slideUp();
                     $("#navbar").slideDown();
                     break;
                 case "export":
@@ -26,25 +31,37 @@ var updater = {
                     break;
             }
         };
+        $("#load_oauth").click(function(event) {
+            updater.socket.send('{"message": "load_oauth"}');
+        });
+        $("#load_json").click(function(event) {
+            event.preventDefault();
+            $("#file").trigger('click');
+        });
+        $("#file").change(function(event) {
+            var reader = new FileReader();
+            reader.onload = function() {
+                updater.socket.send('{"message": "load_json","content": ' + this.result + '}');
+            }
+            reader.readAsText(this.files[0]);
+        });
         $("#json").click(function(event) {
-            updater.socket.send("json");
+            updater.socket.send('{"message": "json"}');
         });
         $("#csv").click(function(event) {
-            updater.socket.send("csv");
+            updater.socket.send('{"message": "csv"}');
         });
         $("#md").click(function(event) {
-            updater.socket.send("md");
+            updater.socket.send('{"message": "md"}');
         });
         $("#html").click(function(event) {
-            updater.socket.send("html");
+            updater.socket.send('{"message": "html"}');
         });
     },
 
     showMessage: function(message) {
         var node = $(message);
-        node.hide();
         $("#container").append(node);
-        node.slideDown();
         updater.link++;
         $("#num").text(updater.link);
     }
