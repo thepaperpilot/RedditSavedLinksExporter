@@ -135,7 +135,10 @@ class LinkSocketHandler(websocket.WebSocketHandler):
                     "subreddit": str(i.subreddit.display_name),
                     "permalink": i.permalink.encode('utf-8'),
                     "num_comments": str(i.num_comments),
+                    "is_self": "True" if (i.is_self) & (i.selftext_html is not None) & (i.selftext != "[removed]") & (i.selftext != "[deleted]") else "False",
                 }
+                if link["is_self"] == "True":
+                    link.update({"body": i.selftext_html})
                 self.links.extend([link])
                 self.update_link(link)
             else:
