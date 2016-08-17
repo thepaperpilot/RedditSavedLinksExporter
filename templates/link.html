@@ -18,9 +18,9 @@
             <a href="https://www.reddit.com/comments/{{ link["link_id"] }}/{{ link["link_title"] }}/{{ link["id"] }}/">
                 permalink
             </a>
-        </p>
-        <div class="link" style="margin: 4px;">
-            {% raw link["body"] %}
+            <
+            <div class="link" style="margin: 4px;">
+                {% raw link["body"] %}
         </div>
     </div>
 {% else %}
@@ -50,5 +50,10 @@
                 </a>
             </p>
         </div>
+        {% if link["is_self"] == "True" %}
+            <div class="link" style="margin: 4px;">
+                {% raw link["body"] %}
+            </div>
+        {% end %}
     </div>
 {% end %}
