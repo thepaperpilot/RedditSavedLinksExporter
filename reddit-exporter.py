@@ -191,26 +191,36 @@ class MainHandler(BaseHandler):
             if token:
                 r.set_access_credentials(scope, token)
             else:
-                r.get_access_information(self.get_secure_cookie("user"))
-                self.set_secure_cookie("token", r.access_token)
+                access_information = r.get_access_information(self.get_secure_cookie("user"))
+                self.set_secure_cookie("token", access_information["access_token"])
+                self.set_secure_cookie("refresh", access_information["refresh_token"])
 
             self.render('index.html', name="/u/" + r.user.name.encode('utf-8'), links=[], js="True")
         except OAuthInvalidGrant:
             self.redirect('/auth')
         except OAuthInvalidToken:
-            self.clear_cookie("token")
+            refresh = self.get_secure_cookie("refresh")
+            if refresh:
+                try:
+                    self.set_secure_cookie("token", r.refresh_access_information(refresh)["access_token"])
+                except:
+                    self.clear_cookie("refresh")
+                    self.clear_cookie("token")
+            else:
+                self.clear_cookie("token")
             self.redirect('/')
 
 class AuthHandler(BaseHandler):
     def get(self):
         self.clear_cookie("user")
         self.clear_cookie("token")
+        self.clear_cookie("refresh")
         code = self.get_arguments('code')
         if code:
             self.set_secure_cookie("user", code[0])
             self.redirect("/")
         else:
-            url = r.get_authorize_url('reddit-exporter', scope)
+            url = r.get_authorize_url('reddit-exporter', scope, refreshable=True)
             self.render('authenticate.html', link=url)
 
 def read_settings():

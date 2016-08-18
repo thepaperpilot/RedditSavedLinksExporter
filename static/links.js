@@ -42,7 +42,7 @@ var updater = {
             var reader = new FileReader();
             reader.onload = function() {
                 updater.socket.send('{"message": "load_json","content": ' + this.result + '}');
-            }
+            };
             reader.readAsText(this.files[0]);
         });
         $("#json").click(function(event) {
