@@ -1,5 +1,6 @@
 {
 	"client_id": "not this",
 	"client_secret": "something that isn't this",
-	"redirect_uri": "http://127.0.0.1:65010/auth"
+	"redirect_uri": "http://127.0.0.1:65010/auth",
+	"cookie_secret": "__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__"
 }

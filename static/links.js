@@ -29,6 +29,9 @@ var updater = {
                 case "export":
                     saveAs(new Blob([json.content], {type: json.type}), json.name, true);
                     break;
+                case "remove":
+                    updater.removeMessage(json.content);
+                    break;
             }
         };
         $("#load_oauth").click(function(event) {
@@ -57,6 +60,10 @@ var updater = {
         $("#html").click(function(event) {
             updater.socket.send('{"message": "html"}');
         });
+        $("#delete").click(function(event) {
+            if (window.confirm("This will delete ALL of your saved reddit links. It will take a long time. Are you sure?"))
+                updater.socket.send('{"message": "delete"}');
+        });
         $("#signout").click(function(event) {
             window.location.assign("/auth");
         });
@@ -67,5 +74,9 @@ var updater = {
         $("#container").append(node);
         updater.link++;
         $("#num").text(updater.link);
+    },
+
+    removeMessage: function(message) {
+        $("#" + message).remove();
     }
 };

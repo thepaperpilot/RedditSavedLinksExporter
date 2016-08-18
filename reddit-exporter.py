@@ -76,6 +76,8 @@ class LinkSocketHandler(websocket.WebSocketHandler):
                 "type": "text/html;charset=utf-8",
             }
             self.write_message(send)
+        elif message["message"] == "delete":
+            self.thread_pool.submit(self.delete_links)
 
     def update_link(self, link):
         message = {
@@ -112,6 +114,7 @@ class LinkSocketHandler(websocket.WebSocketHandler):
                     "subreddit": str(i.subreddit.display_name),
                     "permalink": i.permalink.encode('utf-8'),
                     "num_comments": str(i.num_comments),
+                    "id": i.id.encode('utf-8'),
                     "is_self": "True" if (i.is_self) & (i.selftext_html is not None) & (i.selftext != "[removed]") & (i.selftext != "[deleted]") else "False",
                 }
                 if link["is_self"] == "True":
@@ -135,6 +138,7 @@ class LinkSocketHandler(websocket.WebSocketHandler):
                     "subreddit": str(i.subreddit.display_name),
                     "permalink": i.permalink.encode('utf-8'),
                     "num_comments": str(i.num_comments),
+                    "id": i.id.encode('utf-8'),
                     "is_self": "True" if (i.is_self) & (i.selftext_html is not None) & (i.selftext != "[removed]") & (i.selftext != "[deleted]") else "False",
                 }
                 if link["is_self"] == "True":
@@ -158,6 +162,20 @@ class LinkSocketHandler(websocket.WebSocketHandler):
                 self.links.extend([link])
                 self.update_link(link)
         self.write_message({"message": "done"})
+
+    def delete_links(self):
+        links = json.loads(self.json)
+        for i in links:
+            if "permalink" in i:
+                link = praw.objects.Submission(self.r, i)
+            else:
+                link = praw.objects.Comment(self.r, i)
+            message = {
+                "message": "remove",
+                "content": link.id.encode('utf-8'),
+            }
+            link.unsave()
+            self.write_message(message)
 
     def generate_csv(self):
         csv = 'title,url,author,subreddit,permalink\n'
@@ -251,19 +269,23 @@ def read_settings():
         logging.critical("Redirect URI not set.")
         sys.exit(1)
 
+    if len(settings["cookie_secret"]) == 0:
+        logging.critical("Cookie secret not set.")
+        sys.exit(1)
+
     return settings
 
 def get_reddit_object():
-    r = praw.Reddit('Reddit Saved Links Exporter by /u/ThePaperPilot ver 0.1 see '
+    reddit = praw.Reddit('Reddit Saved Links Exporter by /u/ThePaperPilot ver 0.1 see '
                     'https://github.com/thepaperpilot/RedditSavedLinksExporter '
                     'for source',
                     handler=handler)
 
-    r.set_oauth_app_info(client_id=settings['client_id'],
+    reddit.set_oauth_app_info(client_id=settings['client_id'],
                          client_secret=settings['client_secret'],
                          redirect_uri=settings['redirect_uri'])
 
-    return r
+    return reddit
 
 if __name__ == "__main__":
     logging.basicConfig()
@@ -271,7 +293,7 @@ if __name__ == "__main__":
     os.system("praw-multiprocess & disown")
     settings = read_settings()
     handler = MultiprocessHandler()
-    scope = ['identity', 'history']
+    scope = ['identity', 'history', 'save']
     r = get_reddit_object()
 
     application = web.Application(
@@ -280,7 +302,7 @@ if __name__ == "__main__":
             (r"/auth", AuthHandler),
             (r"/linksocket", LinkSocketHandler),
             ],
-        cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
+        cookie_secret=settings['cookie_secret'],
         template_path=os.path.join(os.path.dirname(__file__), "templates"),
         static_path=os.path.join(os.path.dirname(__file__), "static"),
         login_url="/auth",

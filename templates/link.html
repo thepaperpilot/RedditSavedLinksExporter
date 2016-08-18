@@ -1,5 +1,5 @@
 {% if link["self"] == "True" %}
-    <div class="link">
+    <div class="link" id="{{ link["id"] }}">
         <p class="tagline" style="margin-top: 16px;">
             <a href="{{ link["link_url"] }}">
                 {{ link["link_title"] }}
@@ -18,13 +18,12 @@
             <a href="https://www.reddit.com/comments/{{ link["link_id"] }}/{{ link["link_title"] }}/{{ link["id"] }}/">
                 permalink
             </a>
-            <
             <div class="link" style="margin: 4px;">
                 {% raw link["body"] %}
         </div>
     </div>
 {% else %}
-    <div class="link">
+    <div class="link" id="{{ link["id"] }}">
         <a href="{{ link["url"] }}" class="thumbnail">
             <img class="pic" src="
                 {% if (link["thumbnail"] == None) | (link["thumbnail"] == "self") | (link["thumbnail"] == "default") | (link["thumbnail"] == "") %}
