@@ -203,6 +203,8 @@ class MainHandler(BaseHandler):
 
 class AuthHandler(BaseHandler):
     def get(self):
+        self.clear_cookie("user")
+        self.clear_cookie("token")
         code = self.get_arguments('code')
         if code:
             self.set_secure_cookie("user", code[0])

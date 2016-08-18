@@ -57,6 +57,9 @@ var updater = {
         $("#html").click(function(event) {
             updater.socket.send('{"message": "html"}');
         });
+        $("#signout").click(function(event) {
+            window.location.assign("/auth");
+        });
     },
 
     showMessage: function(message) {
