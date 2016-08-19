@@ -27,100 +27,51 @@ class LinkSocketHandler(websocket.WebSocketHandler):
         return {}
 
     def open(self):
-        pass
+        self.r = get_reddit_object()
+        self.r.set_access_credentials(scope, self.get_secure_cookie("token"))
+        self.r.config.store_json_result = True
 
     @gen.coroutine
     def on_message(self, msg):
         message = json.loads(msg)
         if message["message"] == "load_oauth":
             self.write_message({"message": "start"})
-            self.r = get_reddit_object()
-            self.r.set_access_credentials(scope, self.get_secure_cookie("token"))
-            self.r.config.store_json_result = True
             yield self.thread_pool.submit(self.get_saved_oauth, self.r.get_me())
         elif message["message"] == "load_json":
             self.write_message({"message": "start"})
-            self.r = get_reddit_object()
-            self.r.set_access_credentials(scope, self.get_secure_cookie("token"))
-            self.r.config.store_json_result = True
             yield self.thread_pool.submit(self.get_saved_json, message["content"])
         elif message["message"] == "json":
-            send = {
-                "message": "export",
-                "content": self.json,
-                "name": self.r.user.name.encode('utf-8') + ".json",
-                "type": "application/json;charset=utf-8",
-            }
-            self.write_message(send)
+            self.export(self.json, "json", "application/json;charset=utf-8")
         elif message["message"] == "csv":
-            send = {
-                "message": "export",
-                "content": self.generate_csv(),
-                "name": self.r.user.name.encode('utf-8') + ".csv",
-                "type": "text/csv;charset=utf-8",
-            }
-            self.write_message(send)
+            self.export(self.generate_csv(), "csv", "text/csv;charset=utf-8")
         elif message["message"] == "md":
-            send = {
-                "message": "export",
-                "content": self.generate_md(),
-                "name": self.r.user.name.encode('utf-8') + ".md",
-                "type": "text/markdown;charset=utf-8",
-            }
-            self.write_message(send)
+            self.export(self.generate_md(), "md", "text/markdown;charset=utf-8")
         elif message["message"] == "html":
-            send = {
-                "message": "export",
-                "content": self.generate_html(),
-                "name": self.r.user.name.encode('utf-8') + ".html",
-                "type": "text/html;charset=utf-8",
-            }
-            self.write_message(send)
+            self.export(self.generate_html(), "html", "text/html;charset=utf-8")
         elif message["message"] == "delete":
             self.thread_pool.submit(self.delete_links)
 
+    def export(self, content, extension, media):
+        self.write_message({
+            "message": "export",
+            "content": content,
+            "name": self.r.user.name.encode('utf-8') + "." + extension,
+            "type": media,
+            })
+
     def update_link(self, link):
-        message = {
+        self.write_message(message = {
             "message": "link",
             "content": tornado.escape.to_basestring(self.render_string('link.html', link=link)),
-            }
-        self.write_message(message)
+            })
 
     def get_saved_oauth(self, user):
         for i in user.get_saved(limit=None, time='all'):
             self.json += json.dumps(i.json_dict, indent=4) + ','
             if isinstance(i, praw.objects.Comment):
-                link = {
-                    "self": "True",
-                    "link_url": i.link_url.encode('utf-8'),
-                    "link_title": i.link_title.encode('utf-8'),
-                    "link_author": i.link_author.encode('utf-8'),
-                    "subreddit": str(i.subreddit.display_name),
-                    "permalink": "https://www.reddit.com/r/" + str(i.subreddit.display_name) + "/comments/" + i.link_id.encode('utf-8')[3:],
-                    "author": "[deleted]" if not i.author else str(i.author.name),
-                    "link_id": i.link_id.encode('utf-8')[3:],
-                    "id": i.id.encode('utf-8'),
-                    "body": i.body_html.encode('utf-8'),
-                }
-                self.links.extend([link])
-                self.update_link(link)
+                self.readComment(i)
             else:
-                link = {
-                    "self": "False",
-                    "url": i.url.encode('utf-8'),
-                    "thumbnail": i.thumbnail.encode('utf-8'),
-                    "title": i.title.encode('utf-8'),
-                    "author": "[deleted]" if not i.author else str(i.author.name),
-                    "subreddit": str(i.subreddit.display_name),
-                    "permalink": i.permalink.encode('utf-8'),
-                    "num_comments": str(i.num_comments),
-                    "id": i.id.encode('utf-8'),
-                    "is_self": "True" if (i.is_self) & (i.selftext_html is not None) & (i.selftext != "[removed]") & (i.selftext != "[deleted]") else "False",
-                }
-                if link["is_self"] == "True":
-                    link.update({"body": i.selftext_html})
-                self.links.extend([link])
-                self.update_link(link)
+                self.readSubmission(i)
         self.json = self.json[:-1] + ']'
         self.write_message({"message": "done"})
 
@@ -128,40 +79,44 @@ class LinkSocketHandler(websocket.WebSocketHandler):
         self.json = json.dumps(raw, indent=4)
         for submission in raw:
             if "permalink" in submission:
-                i = praw.objects.Submission(self.r, submission)
-                link = {
-                    "self": "False",
-                    "url": i.url.encode('utf-8'),
-                    "thumbnail": i.thumbnail.encode('utf-8'),
-                    "title": i.title.encode('utf-8'),
-                    "author": "[deleted]" if not i.author else str(i.author.name),
-                    "subreddit": str(i.subreddit.display_name),
-                    "permalink": i.permalink.encode('utf-8'),
-                    "num_comments": str(i.num_comments),
-                    "id": i.id.encode('utf-8'),
-                    "is_self": "True" if (i.is_self) & (i.selftext_html is not None) & (i.selftext != "[removed]") & (i.selftext != "[deleted]") else "False",
-                }
-                if link["is_self"] == "True":
-                    link.update({"body": i.selftext_html})
-                self.links.extend([link])
-                self.update_link(link)
+                self.readSubmission(praw.objects.Submission(self.r, submission))
             else:
-                i = praw.objects.Comment(self.r, submission)
-                link = {
-                    "self": "True",
-                    "link_url": i.link_url.encode('utf-8'),
-                    "link_title": i.link_title.encode('utf-8'),
-                    "link_author": i.link_author.encode('utf-8'),
-                    "subreddit": str(i.subreddit.display_name),
-                    "permalink": "https://www.reddit.com/r/" + str(i.subreddit.display_name) + "/comments/" + i.link_id.encode('utf-8')[3:],
-                    "author": "[deleted]" if not i.author else str(i.author.name),
-                    "link_id": i.link_id.encode('utf-8')[3:],
-                    "id": i.id.encode('utf-8'),
-                    "body": i.body_html.encode('utf-8'),
-                }
-                self.links.extend([link])
-                self.update_link(link)
+                self.readComment(praw.objects.Comment(self.r, submission))
         self.write_message({"message": "done"})
+
+    def readComment(self, comment):
+        link = {
+            "self": "True",
+            "link_url": comment.link_url.encode('utf-8'),
+            "link_title": comment.link_title.encode('utf-8'),
+            "link_author": comment.link_author.encode('utf-8'),
+            "subreddit": str(comment.subreddit.display_name),
+            "permalink": "https://www.reddit.com/r/" + str(comment.subreddit.display_name) + "/comments/" + comment.link_id.encode('utf-8')[3:],
+            "author": "[deleted]" if not comment.author else str(comment.author.name),
+            "link_id": comment.link_id.encode('utf-8')[3:],
+            "id": comment.id.encode('utf-8'),
+            "body": comment.body_html.encode('utf-8'),
+        }
+        self.links.extend([link])
+        self.update_link(link)
+
+    def readSubmission(self, submission):
+        link = {
+            "self": "False",
+            "url": submission.url.encode('utf-8'),
+            "thumbnail": submission.thumbnail.encode('utf-8'),
+            "title": submission.title.encode('utf-8'),
+            "author": "[deleted]" if not submission.author else str(submission.author.name),
+            "subreddit": str(submission.subreddit.display_name),
+            "permalink": submission.permalink.encode('utf-8'),
+            "num_comments": str(submission.num_comments),
+            "id": submission.id.encode('utf-8'),
+            "is_self": "True" if (submission.is_self) & (submission.selftext_html is not None) & (submission.selftext != "[removed]") & (submission.selftext != "[deleted]") else "False",
+        }
+        if link["is_self"] == "True":
+            link.update({"body": submission.selftext_html})
+        self.links.extend([link])
+        self.update_link(link)
 
     def delete_links(self):
         links = json.loads(self.json)
@@ -251,29 +206,7 @@ def read_settings():
     settings_str = settings_file.read()
     settings_file.close()
 
-    try:
-        settings = json.loads(settings_str)
-    except ValueError:
-        logging.exception("Error parsing settings.json.")
-        sys.exit(1)
-
-    if len(settings["client_id"]) == 0:
-        logging.critical("ID not set.")
-        sys.exit(1)
-
-    if len(settings["client_secret"]) == 0:
-        logging.critical("Secret not set.")
-        sys.exit(1)
-
-    if len(settings["redirect_uri"]) == 0:
-        logging.critical("Redirect URI not set.")
-        sys.exit(1)
-
-    if len(settings["cookie_secret"]) == 0:
-        logging.critical("Cookie secret not set.")
-        sys.exit(1)
-
-    return settings
+    return json.loads(settings_str)
 
 def get_reddit_object():
     reddit = praw.Reddit('Reddit Saved Links Exporter by /u/ThePaperPilot ver 0.1 see '
@@ -287,28 +220,27 @@ def get_reddit_object():
 
     return reddit
 
-if __name__ == "__main__":
-    logging.basicConfig()
+logging.basicConfig()
 
-    os.system("praw-multiprocess & disown")
-    settings = read_settings()
-    handler = MultiprocessHandler()
-    scope = ['identity', 'history', 'save']
-    r = get_reddit_object()
+os.system("praw-multiprocess & disown")
+settings = read_settings()
+handler = MultiprocessHandler()
+scope = ['identity', 'history', 'save']
+r = get_reddit_object()
 
-    application = web.Application(
-        [
-            (r"/", MainHandler),
-            (r"/auth", AuthHandler),
-            (r"/linksocket", LinkSocketHandler),
-            ],
-        cookie_secret=settings['cookie_secret'],
-        template_path=os.path.join(os.path.dirname(__file__), "templates"),
-        static_path=os.path.join(os.path.dirname(__file__), "static"),
-        login_url="/auth",
-        )
+application = web.Application(
+    [
+        (r"/", MainHandler),
+        (r"/auth", AuthHandler),
+        (r"/linksocket", LinkSocketHandler),
+        ],
+    cookie_secret=settings['cookie_secret'],
+    template_path=os.path.join(os.path.dirname(__file__), "templates"),
+    static_path=os.path.join(os.path.dirname(__file__), "static"),
+    login_url="/auth",
+    )
 
-    application.listen(65010)
-    tornado.ioloop.IOLoop.current().start()
+application.listen(65010)
+tornado.ioloop.IOLoop.current().start()
 
-    logging.shutdown()
+logging.shutdown()
