@@ -30,7 +30,7 @@ var updater = {
                     saveAs(new Blob([json.content], {type: json.type}), json.name, true);
                     break;
                 case "remove":
-                    updater.removeMessage(json.content);
+                    $("#" + json.content).remove();
                     break;
             }
         };
@@ -58,7 +58,15 @@ var updater = {
             updater.socket.send('{"message": "md"}');
         });
         $("#html").click(function(event) {
-            updater.socket.send('{"message": "html"}');
+            updater.socket.send('{"message": "html","content": "' + document.getElementById("bodies").checked + '"}');
+        });
+        $("#htmlcontainer").hover(function(event) {
+            $("#htmlconfig").css("display", "inline");
+        }, function(event) {
+            $("#htmlconfig").css("display", "none");
+        });
+        $("#bodies").change(function(event) {
+            $(".body").toggle(this.checked);
         });
         $("#delete").click(function(event) {
             if (window.confirm("This will delete ALL of your saved reddit links. It will take a long time. Are you sure?"))
@@ -74,9 +82,5 @@ var updater = {
         $("#container").append(node);
         updater.link++;
         $("#num").text(updater.link);
-    },
-
-    removeMessage: function(message) {
-        $("#" + message).remove();
     }
 };

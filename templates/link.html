@@ -1,4 +1,4 @@
-{% if link["self"] == "True" %}
+{% if link["self"] %}
     <div class="link" id="{{ link["id"] }}">
         <p class="tagline" style="margin-top: 16px;">
             <a href="{{ link["link_url"] }}">
@@ -18,9 +18,12 @@
             <a href="https://www.reddit.com/comments/{{ link["link_id"] }}/{{ link["link_title"] }}/{{ link["id"] }}/">
                 permalink
             </a>
-            <div class="link" style="margin: 4px;">
+        </p>
+        {% if bodies %}
+            <div class="link body" style="margin: 4px;">
                 {% raw link["body"] %}
-        </div>
+            </div>
+        {% end %}
     </div>
 {% else %}
     <div class="link" id="{{ link["id"] }}">
@@ -49,10 +52,12 @@
                 </a>
             </p>
         </div>
-        {% if link["is_self"] == "True" %}
-            <div class="link" style="margin: 4px;">
-                {% raw link["body"] %}
-            </div>
+        {% if link["is_self"] %}
+            {% if bodies %}
+                <div class="link body" style="margin: 4px;">
+                    {% raw link["body"] %}
+                </div>
+            {% end %}
         {% end %}
     </div>
 {% end %}

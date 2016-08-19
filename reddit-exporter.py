@@ -47,7 +47,7 @@ class LinkSocketHandler(websocket.WebSocketHandler):
         elif message["message"] == "md":
             self.export(self.generate_md(), "md", "text/markdown;charset=utf-8")
         elif message["message"] == "html":
-            self.export(self.generate_html(), "html", "text/html;charset=utf-8")
+            self.export(self.generate_html(message["content"]), "html", "text/html;charset=utf-8")
         elif message["message"] == "delete":
             self.thread_pool.submit(self.delete_links)
 
@@ -62,7 +62,7 @@ class LinkSocketHandler(websocket.WebSocketHandler):
     def update_link(self, link):
         self.write_message(message = {
             "message": "link",
-            "content": tornado.escape.to_basestring(self.render_string('link.html', link=link)),
+            "content": tornado.escape.to_basestring(self.render_string('link.html', link=link, bodies=True)),
             })
 
     def get_saved_oauth(self, user):
@@ -86,7 +86,7 @@ class LinkSocketHandler(websocket.WebSocketHandler):
 
     def readComment(self, comment):
         link = {
-            "self": "True",
+            "self": True,
             "link_url": comment.link_url.encode('utf-8'),
             "link_title": comment.link_title.encode('utf-8'),
             "link_author": comment.link_author.encode('utf-8'),
@@ -102,7 +102,7 @@ class LinkSocketHandler(websocket.WebSocketHandler):
 
     def readSubmission(self, submission):
         link = {
-            "self": "False",
+            "self": False,
             "url": submission.url.encode('utf-8'),
             "thumbnail": submission.thumbnail.encode('utf-8'),
             "title": submission.title.encode('utf-8'),
@@ -111,9 +111,9 @@ class LinkSocketHandler(websocket.WebSocketHandler):
             "permalink": submission.permalink.encode('utf-8'),
             "num_comments": str(submission.num_comments),
             "id": submission.id.encode('utf-8'),
-            "is_self": "True" if (submission.is_self) & (submission.selftext_html is not None) & (submission.selftext != "[removed]") & (submission.selftext != "[deleted]") else "False",
+            "is_self": True if (submission.is_self) & (submission.selftext_html is not None) & (submission.selftext != "[removed]") & (submission.selftext != "[deleted]") else False,
         }
-        if link["is_self"] == "True":
+        if link["is_self"]:
             link.update({"body": submission.selftext_html})
         self.links.extend([link])
         self.update_link(link)
@@ -125,27 +125,26 @@ class LinkSocketHandler(websocket.WebSocketHandler):
                 link = praw.objects.Submission(self.r, i)
             else:
                 link = praw.objects.Comment(self.r, i)
-            message = {
+            link.unsave()
+            self.write_message({
                 "message": "remove",
                 "content": link.id.encode('utf-8'),
-            }
-            link.unsave()
-            self.write_message(message)
+                })
 
     def generate_csv(self):
         csv = 'title,url,author,subreddit,permalink\n'
         for i in self.links:
-            csv += (i["link_title"] if i["self"] == "True" else i["title"]).replace(',', '') + ','
-            csv += (i["link_url"] if i["self"] == "True" else i["url"]).replace(',', '') + ','
+            csv += (i["link_title"] if i["self"] else i["title"]).replace(',', '') + ','
+            csv += (i["link_url"] if i["self"] else i["url"]).replace(',', '') + ','
             csv += i["author"].replace(',', '') + ','
             csv += i["subreddit"].replace(',', '') + ','
-            csv += ("https://www.reddit.com/comments/" + i["link_id"] + "/" + i["link_title"] + "/" + i["id"] + "/" if i["self"] == "True" else i["permalink"]).replace(',', '') + '\n'
+            csv += ("https://www.reddit.com/comments/" + i["link_id"] + "/" + i["link_title"] + "/" + i["id"] + "/" if i["self"] else i["permalink"]).replace(',', '') + '\n'
         return csv
 
     def generate_md(self):
         for i in self.links:
             i['permalink'] = i['permalink'].replace(' ', '%20')
-            if i['self'] == "True":
+            if i['self']:
                 i['body_md'] = tornado.escape.xhtml_unescape("> " + i['body'].replace('\n', '\n> '))
                 i['link_url'] = i['link_url'].replace(' ', '%20')
                 i['comment_permalink'] = ("https://www.reddit.com/comments/" + i["link_id"] + "/" + i["link_title"] + "/" + i["id"] + "/").replace(' ', '%20')
@@ -153,8 +152,9 @@ class LinkSocketHandler(websocket.WebSocketHandler):
                 i['url'] = i['url'].replace(' ', '%20')
         return self.render_string('index.md', name="/u/" + self.r.user.name.encode('utf-8'), links=self.links).replace('﻿', '')
 
-    def generate_html(self):
-        return self.render_string('index.html', name="/u/" + self.r.user.name.encode('utf-8'), links=self.links, js="False")
+    def generate_html(self, bodies):
+        html = self.render_string('index.html', name="/u/" + self.r.user.name.encode('utf-8'), links=self.links, js=False, bodies=(bodies == "true"))
+        return html
 
 class MainHandler(BaseHandler):
     @web.authenticated
@@ -168,7 +168,7 @@ class MainHandler(BaseHandler):
                 self.set_secure_cookie("token", access_information["access_token"])
                 self.set_secure_cookie("refresh", access_information["refresh_token"])
 
-            self.render('index.html', name="/u/" + r.user.name.encode('utf-8'), links=[], js="True")
+            self.render('index.html', name="/u/" + r.user.name.encode('utf-8'), links=[], js=True, bodies=True)
         except OAuthInvalidGrant:
             self.redirect('/auth')
         except OAuthInvalidToken:

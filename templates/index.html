@@ -2,7 +2,7 @@
 <html>
 <head>
 	<title>reddit saved links exporter</title>
-	{% if js == "True" %}
+	{% if js %}
 		<link rel="stylesheet" href="{{ static_url("index.css") }}" type="text/css">
 		<link rel="stylesheet" href="{{ static_url("bar.css") }}" type="text/css">
 	{% else %}
@@ -245,11 +245,11 @@
 
 	<div id="container">
 		{% for link in links %}
-			{% module Template("link.html", link=link) %}
+			{% module Template("link.html", link=link, bodies=bodies) %}
 		{% end %}
 	</div>
 
-	{% if js == "True" %}
+	{% if js %}
 		{% module Template("loadbar.html") %}
 		{% module Template("progressbar.html") %}
 		{% module Template("navbar.html") %}
