@@ -1,0 +1,124 @@
+.links {
+    margin: auto;
+    width: 80%;
+    max-width: 60em;
+    margin-top: 50px;
+    background: #202020;
+    margin-bottom: 20px;
+}
+
+.link {
+    padding: 10px;
+    border: 1px solid #272727;
+    border-bottom-color: #181818;
+    max-width: inherit;
+}
+
+.link-header {
+    display: flex;
+}
+
+.thumbnail {
+    width: 70px;
+    max-height: 70px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.thumbnail.self {
+    background-image: url(sprite-reddit.31dlt9dTjYA.png);
+    background-position: 0px -1267px;
+    background-repeat: no-repeat;
+    height: 50px;
+}
+
+.thumbnail.default {
+    background-image: url(sprite-reddit.31dlt9dTjYA.png);
+    background-position: 0px -1099px;
+    background-repeat: no-repeat;
+    height: 50px;
+}
+
+.thumbnail.spoiler {
+    background-image: url(sprite-reddit.31dlt9dTjYA.png);
+    background-position: 0px -1211px;
+    background-repeat: no-repeat;
+    height: 50px;
+}
+
+.thumbnail {
+    width: 70px;
+    max-height: 70px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.thumbnail img {
+    max-width: 100%;
+    max-height: 100%;
+    margin: auto;
+    display: block;
+}
+
+.link-info {
+    margin-left: 10px;
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+    justify-content: center;
+    min-width: 1%;
+}
+
+.link-title {
+    font-size: medium;
+    margin-bottom: 4px;
+    display: block;
+    word-wrap: break-word;
+}
+
+.reddit {
+    color: #3498db;
+}
+
+.reddit:visited {
+    color: #3498db;
+}
+
+.tagline {
+    font-size: smaller;
+    color: #637481;
+    margin: 0;
+    display: inline-block;
+}
+
+.comment {
+    margin-top: 8px;
+}
+
+.body {
+    padding: 5px 8px;
+    background: #252525;
+    border: 1px solid #101010;
+    border-radius: 0;
+    font-family: sans-serif;
+    margin-top: 8px;
+}
+
+.body > :first-child {
+    margin-top: 0;
+}
+
+.body p {
+    font-size: 1em;
+    line-height: 1.4285714285714286em;
+    margin-top: 0.35714285714285715em;
+    margin-bottom: 0.35714285714285715em;
+}
+
+.bodyToggle {
+    background: #252525;
+    border: 1px solid #1a1a1a;
+    height: 20px;
+    color: #eee;
+    margin-right: 10px;
+}
