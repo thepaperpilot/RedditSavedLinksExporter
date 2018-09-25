@@ -8,6 +8,8 @@
     box-sizing: border-box;
     white-space: nowrap;
     overflow-x: auto;
+    z-index: 1;
+    border-bottom: solid black;
 }
 
 .header button {

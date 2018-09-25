@@ -2,7 +2,8 @@ import util from './util'
 import { combineReducers } from 'redux'
 
 const loggedIn = util.createReducer(false, {
-    'LOG_IN': () => true
+    'LOG_IN': () => true,
+    'LOAD': () => true
 })
 
 const links = util.createReducer([], {

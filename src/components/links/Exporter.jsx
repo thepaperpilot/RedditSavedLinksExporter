@@ -11,8 +11,13 @@ class Exporter extends Component {
     }
 
     exportJSON() {
+        const json = JSON.stringify(this.props.links)
+            .replace(/[\u007F-\uFFFF]/g, function(chr) {
+                return `\\u${`0000${chr.charCodeAt(0).toString(16)}`.substr(-4)}`
+            })
+
         download(
-            JSON.stringify(this.props.links),
+            json,
             `${this.props.username}.json`,
             'text/json')
     }

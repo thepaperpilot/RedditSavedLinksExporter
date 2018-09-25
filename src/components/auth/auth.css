@@ -23,3 +23,23 @@
     text-align: center;
     display: block;
 }
+
+.auth-load {
+    display: none;
+}
+
+.auth-load ~ label {
+    padding: 20px;
+    background: none;
+    border: none;
+    font-family: normal x-small verdana,arial,helvetica,sans-serif;
+    font-size: large;
+    width: 100%;
+    display: block;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.auth-load ~ label:hover {
+    background: rgba(255, 255, 255, .1);
+}
